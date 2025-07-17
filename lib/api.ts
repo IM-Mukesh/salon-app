@@ -25,6 +25,8 @@ export async function fetcher<T>(
   }
 
   try {
+    console.log("url here is", url);
+
     const response = await fetch(url, {
       ...options,
       headers,

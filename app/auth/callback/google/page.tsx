@@ -16,7 +16,7 @@ export default function GoogleCallback() {
 
   useEffect(() => {
     if (code) {
-      fetcher(`${BACKEND_URL}/api/aut/google`, {
+      fetcher(`${BACKEND_URL}/api/auth/google`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
