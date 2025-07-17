@@ -60,12 +60,13 @@ export function AppSidebar() {
       icon: Star,
       active: pathname === "/dashboard/reviews",
     },
-    {
-      title: "Settings",
-      url: "/dashboard/settings",
-      icon: Settings,
-      active: pathname === "/dashboard/settings",
-    },
+    // {
+    //   title: "Settings",
+    //   url: "/dashboard/settings",
+    //   icon: Settings,
+    //   active: pathname === "/dashboard/settings",
+    // },
+    // http://localhost:5000/api/salons/6877f5e85cf13dc3a4a5226c/reviews
   ];
 
   // Only render sidebar if authenticated and is a salon user

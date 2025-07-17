@@ -61,6 +61,8 @@ export default function SalonProfilePage() {
     enabled: !!user?.id && !!token, // Only fetch if user and token are available
   });
 
+  console.log("salon qr", salon);
+
   const form = useForm<EditProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
