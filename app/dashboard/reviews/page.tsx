@@ -30,7 +30,6 @@ export default function SalonReviewsPage() {
       queryFn: () => fetcher<Salon>(`/api/salons/me`, { token: token || "" }),
       enabled: !!user?.id && !!token,
     });
-    console.log("Salon data:", salon);
 
     // Then fetch reviews using the salon ID
     const {
@@ -42,11 +41,9 @@ export default function SalonReviewsPage() {
       queryKey: ["salonReviewsDashboard", salon?._id],
       queryFn: async () => {
         try {
-          console.log("Fetching reviews for salon ID:", salon?._id);
           const result = await fetcher<any>(`/api/reviews/${salon?._id}`, {
             token: token || "",
           });
-          console.log("Reviews API response:", result);
 
           // Handle different response structures
           let reviewsArray: Review[] = [];
@@ -66,7 +63,6 @@ export default function SalonReviewsPage() {
             }
           }
 
-          console.log("Extracted reviews array:", reviewsArray);
           return reviewsArray;
         } catch (error) {
           console.error("Error fetching reviews:", error);
@@ -77,8 +73,6 @@ export default function SalonReviewsPage() {
       retry: 1, // Only retry once
       retryDelay: 1000,
     });
-    console.log("Reviews data:", reviews);
-    console.log("Reviews error:", reviewsError, reviewsErrorData);
 
     const containerVariants = {
       hidden: { opacity: 0 },
@@ -184,7 +178,6 @@ export default function SalonReviewsPage() {
 
     // Ensure reviews is an array before mapping
     const reviewsArray = Array.isArray(reviews) ? reviews : [];
-    console.log("Reviews array:", reviewsArray);
 
     if (reviewsArray.length === 0) {
       return (
@@ -217,7 +210,6 @@ export default function SalonReviewsPage() {
             <CardContent className="px-0 pb-0">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {reviewsArray.map((review) => {
-                  console.log("Review object:", review);
                   return (
                     <motion.div
                       key={review._id || review.id}

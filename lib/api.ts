@@ -13,7 +13,6 @@ export async function fetcher<T>(
   options?: FetchOptions
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-  console.log("url is", url, options);
 
   // Use Record<string, string> for headers to allow dynamic assignment
   const headers: Record<string, string> = {
