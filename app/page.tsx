@@ -97,14 +97,16 @@ export default function HomePage() {
     error,
   } = useQuery<Salon[], Error>({
     queryKey: ["nearbySalons", location],
-    queryFn: () => {
+    queryFn: async () => {
       if (!location) {
         throw new Error("Location not available");
       }
-      return fetcher<Salon[]>("/api/salons/nearby", {
+      const res = await fetcher<{ salons: Salon[] }>("/api/salons/nearby", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(location),
       });
+      return res.salons;
     },
     enabled: !!location, // Only fetch if location is available
   });
@@ -208,7 +210,7 @@ export default function HomePage() {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         >
           {salons.map((salon) => (
-            <motion.div key={salon.id} variants={itemVariants}>
+            <motion.div key={salon._id || salon.id} variants={itemVariants}>
               <Card className="overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <div className="relative h-48 w-full">
                   <Image
@@ -263,8 +265,7 @@ export default function HomePage() {
                       </span>
                     </a>
                   </Button>
-                  <Button asChild className="flex-1">
-                    {/* Ensure only a single <Link> element as child */}
+                  {/* <Button asChild className="flex-1">
                     <Link href={`/salon/${salon.id}`}>
                       <span
                         style={{ display: "inline-flex", alignItems: "center" }}
@@ -273,7 +274,7 @@ export default function HomePage() {
                         Give Review
                       </span>
                     </Link>
-                  </Button>
+                  </Button> */}
                 </div>
               </Card>
             </motion.div>
