@@ -16,14 +16,16 @@ export interface Salon {
   description: string;
   businessHours: string; // Could be more structured in a real app
   address: string;
-  pinCode: string;
-  location: {
+  pinCode?: string;
+  location?: {
     lat: number;
     lng: number;
   };
   images: string[]; // Array of public URLs
   qrCodeUrl?: string;
   distance?: number; // For nearby salons
+  totalReviews?: number;
+  averageRating?: number | null;
 }
 
 export interface Review {

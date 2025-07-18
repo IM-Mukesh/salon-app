@@ -210,74 +210,96 @@ export default function HomePage() {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         >
           {salons.map((salon) => (
-            <motion.div key={salon._id || salon.id} variants={itemVariants}>
-              <Card className="overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <div className="relative h-48 w-full">
-                  <Image
-                    src={
-                      salon.images[0] || "/placeholder.svg?height=400&width=600"
-                    }
-                    alt={salon.name}
-                    layout="fill"
-                    objectFit="cover"
-                    className="rounded-t-lg"
-                  />
-                </div>
-                <CardHeader>
-                  <CardTitle className="text-xl font-semibold">
-                    {salon.name}
-                  </CardTitle>
-                  <CardDescription className="flex items-center text-sm text-muted-foreground">
-                    <MapPin className="mr-1 h-4 w-4" />
-                    {salon.distance
-                      ? `${salon.distance.toFixed(2)} km away`
-                      : "Distance unknown"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <p className="text-sm text-foreground line-clamp-2">
-                    {salon.description}
-                  </p>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Star className="mr-1 h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span>
-                      {/* Placeholder for average rating */}4.5 (12 reviews)
-                    </span>
+            <Link
+              key={salon._id || salon.id}
+              href={`/salon/${salon._id || salon.id}`}
+              className="block group"
+            >
+              <motion.div variants={itemVariants} className="h-full">
+                <Card className="overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 group-hover:ring-2 group-hover:ring-primary">
+                  <div className="relative h-48 w-full">
+                    <Image
+                      src={
+                        salon.images && salon.images.length > 0
+                          ? salon.images[0]
+                          : "/placeholder.svg?height=400&width=600"
+                      }
+                      alt={salon.name}
+                      layout="fill"
+                      objectFit="cover"
+                      className="rounded-t-lg"
+                    />
                   </div>
-                </CardContent>
-                <div className="p-4 flex flex-col sm:flex-row justify-between gap-2">
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="flex-1 bg-transparent"
-                  >
-                    {/* Ensure only a single <a> element as child */}
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${salon.location.lat},${salon.location.lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                  <CardHeader>
+                    <CardTitle className="text-xl font-semibold">
+                      {salon.name}
+                    </CardTitle>
+                    <CardDescription className="flex items-center text-sm text-muted-foreground">
+                      <MapPin className="mr-1 h-4 w-4" />
+                      {salon.distance !== undefined
+                        ? `${(salon.distance / 1000).toFixed(2)} km away`
+                        : "Distance unknown"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <p className="text-sm text-foreground line-clamp-2">
+                      {salon.description}
+                    </p>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Star className="mr-1 h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span>
+                        {salon.averageRating !== null &&
+                        salon.averageRating !== undefined
+                          ? `${salon.averageRating} (${
+                              salon.totalReviews || 0
+                            } reviews)`
+                          : salon.totalReviews
+                          ? `No rating (${salon.totalReviews} reviews)`
+                          : "No reviews yet"}
+                      </span>
+                    </div>
+                  </CardContent>
+                  <div className="p-4 flex flex-col sm:flex-row justify-between gap-2">
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="flex-1 bg-transparent"
                     >
-                      <span
-                        style={{ display: "inline-flex", alignItems: "center" }}
+                      {/* Ensure only a single <a> element as child */}
+                      <a
+                        href={
+                          salon.location
+                            ? `https://www.google.com/maps/search/?api=1&query=${salon.location.lat},${salon.location.lng}`
+                            : "#"
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Open in Maps
-                      </span>
-                    </a>
-                  </Button>
-                  {/* <Button asChild className="flex-1">
-                    <Link href={`/salon/${salon.id}`}>
-                      <span
-                        style={{ display: "inline-flex", alignItems: "center" }}
-                      >
-                        <MessageSquarePlus className="mr-2 h-4 w-4" />
-                        Give Review
-                      </span>
-                    </Link>
-                  </Button> */}
-                </div>
-              </Card>
-            </motion.div>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          Open in Maps
+                        </span>
+                      </a>
+                    </Button>
+                    {/* <Button asChild className="flex-1">
+                      <Link href={`/salon/${salon.id}`}>
+                        <span
+                          style={{ display: "inline-flex", alignItems: "center" }}
+                        >
+                          <MessageSquarePlus className="mr-2 h-4 w-4" />
+                          Give Review
+                        </span>
+                      </Link>
+                    </Button> */}
+                  </div>
+                </Card>
+              </motion.div>
+            </Link>
           ))}
         </motion.div>
       )}

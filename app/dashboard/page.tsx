@@ -1,8 +1,11 @@
+"use client";
 import DashboardWelcome from "./DashboardWelcome";
+import { useAuth } from "@/context/auth-context";
 
 export default function DashboardPage() {
-  // Replace this with actual salon name from context or props as needed
-  const salonName = "Radiant Beauty Salon";
+  const { user } = useAuth();
+  // Prefer user's name from Google login, fallback to salon name
+  const salonName = user?.name || "Radiant Beauty Salon";
 
   return <DashboardWelcome salonName={salonName} />;
 }

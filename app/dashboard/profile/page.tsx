@@ -61,8 +61,6 @@ export default function SalonProfilePage() {
     enabled: !!user?.id && !!token, // Only fetch if user and token are available
   });
 
-  console.log("salon qr", salon);
-
   const form = useForm<EditProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -90,6 +88,21 @@ export default function SalonProfilePage() {
         lat: salon.location?.lat,
         lng: salon.location?.lng,
       });
+      // If lat/lng are missing, try to get from browser
+      if (!salon.location?.lat || !salon.location?.lng) {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              form.setValue("lat", position.coords.latitude);
+              form.setValue("lng", position.coords.longitude);
+            },
+            (error) => {
+              // Optionally show a toast or ignore
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          );
+        }
+      }
     }
   }, [salon, form]);
 
@@ -103,7 +116,7 @@ export default function SalonProfilePage() {
         method: "PUT",
         body: JSON.stringify({
           ...updatedProfile,
-          location: { lat: updatedProfile.lat, lng: updatedProfile.lng },
+          coordinates: [updatedProfile.lng, updatedProfile.lat],
         }),
         token: token || "",
       }),
@@ -124,13 +137,230 @@ export default function SalonProfilePage() {
 
   const handleDownloadQR = () => {
     if (salon?.qrCodeUrl) {
-      const link = document.createElement("a");
-      link.href = salon.qrCodeUrl;
-      link.download = `${salon.name}_QR_Code.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("QR Code download started!");
+      // Create a canvas to generate the professional QR design
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        toast.error("Canvas not supported in this browser.");
+        return;
+      }
+
+      // Set canvas size for high quality
+      canvas.width = 1200;
+      canvas.height = 1600;
+
+      // Create gradient background
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, "#667eea");
+      gradient.addColorStop(0.5, "#764ba2");
+      gradient.addColorStop(1, "#f093fb");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Add decorative elements
+      ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+      for (let i = 0; i < 50; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const radius = Math.random() * 3 + 1;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+
+      // Create main content area
+      const contentWidth = canvas.width - 100;
+      const contentHeight = canvas.height - 100;
+      const contentX = 50;
+      const contentY = 50;
+
+      // White background for content
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.shadowColor = "rgba(0, 0, 0, 0.1)";
+      ctx.shadowBlur = 20;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 10;
+      // Use a workaround for roundRect since it might not be supported in all browsers
+      ctx.beginPath();
+      ctx.moveTo(contentX + 30, contentY);
+      ctx.lineTo(contentX + contentWidth - 30, contentY);
+      ctx.quadraticCurveTo(
+        contentX + contentWidth,
+        contentY,
+        contentX + contentWidth,
+        contentY + 30
+      );
+      ctx.lineTo(contentX + contentWidth, contentY + contentHeight - 30);
+      ctx.quadraticCurveTo(
+        contentX + contentWidth,
+        contentY + contentHeight,
+        contentX + contentWidth - 30,
+        contentY + contentHeight
+      );
+      ctx.lineTo(contentX + 30, contentY + contentHeight);
+      ctx.quadraticCurveTo(
+        contentX,
+        contentY + contentHeight,
+        contentX,
+        contentY + contentHeight - 30
+      );
+      ctx.lineTo(contentX, contentY + 30);
+      ctx.quadraticCurveTo(contentX, contentY, contentX + 30, contentY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Reset shadow
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+
+      // Load QR code image
+      const qrImage = new window.Image();
+      qrImage.crossOrigin = "anonymous";
+      qrImage.onload = () => {
+        // Calculate QR code position and size
+        const qrSize = 400;
+        const qrX = contentX + (contentWidth - qrSize) / 2;
+        const qrY = contentY + 200;
+
+        // Add QR code background
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40);
+
+        // Add QR code border
+        ctx.strokeStyle = "#667eea";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40);
+
+        // Draw QR code
+        ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
+
+        // Add salon name
+        ctx.fillStyle = "#2d3748";
+        ctx.font = "bold 48px 'Arial', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(salon.name, contentX + contentWidth / 2, contentY + 100);
+
+        // Add thank you message
+        ctx.fillStyle = "#4a5568";
+        ctx.font = "24px 'Arial', sans-serif";
+        ctx.fillText(
+          "Thank you for visiting us!",
+          contentX + contentWidth / 2,
+          qrY + qrSize + 80
+        );
+
+        // Add feedback request
+        ctx.fillStyle = "#718096";
+        ctx.font = "20px 'Arial', sans-serif";
+        ctx.fillText(
+          "Please scan this QR code to leave your feedback",
+          contentX + contentWidth / 2,
+          qrY + qrSize + 120
+        );
+
+        // Add visit again message
+        ctx.fillStyle = "#667eea";
+        ctx.font = "bold 22px 'Arial', sans-serif";
+        ctx.fillText(
+          "We hope to see you again soon!",
+          contentX + contentWidth / 2,
+          qrY + qrSize + 160
+        );
+
+        // Add decorative elements around QR code
+        ctx.strokeStyle = "#667eea";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+
+        // Top left corner
+        ctx.beginPath();
+        ctx.moveTo(qrX - 40, qrY - 40);
+        ctx.lineTo(qrX - 40, qrY - 60);
+        ctx.moveTo(qrX - 40, qrY - 40);
+        ctx.lineTo(qrX - 60, qrY - 40);
+        ctx.stroke();
+
+        // Top right corner
+        ctx.beginPath();
+        ctx.moveTo(qrX + qrSize + 40, qrY - 40);
+        ctx.lineTo(qrX + qrSize + 40, qrY - 60);
+        ctx.moveTo(qrX + qrSize + 40, qrY - 40);
+        ctx.lineTo(qrX + qrSize + 60, qrY - 40);
+        ctx.stroke();
+
+        // Bottom left corner
+        ctx.beginPath();
+        ctx.moveTo(qrX - 40, qrY + qrSize + 40);
+        ctx.lineTo(qrX - 40, qrY + qrSize + 60);
+        ctx.moveTo(qrX - 40, qrY + qrSize + 40);
+        ctx.lineTo(qrX - 60, qrY + qrSize + 40);
+        ctx.stroke();
+
+        // Bottom right corner
+        ctx.beginPath();
+        ctx.moveTo(qrX + qrSize + 40, qrY + qrSize + 40);
+        ctx.lineTo(qrX + qrSize + 40, qrY + qrSize + 60);
+        ctx.moveTo(qrX + qrSize + 40, qrY + qrSize + 40);
+        ctx.lineTo(qrX + qrSize + 60, qrY + qrSize + 40);
+        ctx.stroke();
+
+        // Reset line dash
+        ctx.setLineDash([]);
+
+        // Add contact info if available
+        if (salon.contact) {
+          ctx.fillStyle = "#a0aec0";
+          ctx.font = "18px 'Arial', sans-serif";
+          ctx.fillText(
+            `Contact: ${salon.contact}`,
+            contentX + contentWidth / 2,
+            qrY + qrSize + 200
+          );
+        }
+
+        // Add business hours if available
+        if (salon.businessHours) {
+          ctx.fillStyle = "#a0aec0";
+          ctx.font = "16px 'Arial', sans-serif";
+          ctx.fillText(
+            salon.businessHours,
+            contentX + contentWidth / 2,
+            qrY + qrSize + 230
+          );
+        }
+
+        // Convert canvas to blob and download
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = `${salon.name.replace(
+                /[^a-zA-Z0-9]/g,
+                "_"
+              )}_Professional_QR.png`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+              toast.success("Professional QR Code downloaded successfully!");
+            } else {
+              toast.error("Failed to generate QR code image.");
+            }
+          },
+          "image/png",
+          0.95
+        );
+      };
+
+      qrImage.onerror = () => {
+        toast.error("Failed to load QR code image.");
+      };
+
+      qrImage.src = salon.qrCodeUrl;
     } else {
       toast.error("QR Code URL not available.");
     }
@@ -143,14 +373,130 @@ export default function SalonProfilePage() {
         printWindow.document.write(`
           <html>
             <head>
-              <title>${salon.name} QR Code</title>
+              <title>${salon.name} - QR Code for Reviews</title>
               <style>
-                body { display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-                img { max-width: 80%; max-height: 80vh; }
+                @media print {
+                  body { margin: 0; padding: 20px; }
+                  .print-container { 
+                    display: flex; 
+                    flex-direction: column; 
+                    align-items: center; 
+                    justify-content: center; 
+                    min-height: 100vh; 
+                    text-align: center;
+                    font-family: Arial, sans-serif;
+                  }
+                  .salon-name {
+                    font-size: 24px;
+                    font-weight: bold;
+                    margin-bottom: 20px;
+                    color: #333;
+                  }
+                  .qr-code {
+                    border: 2px solid #333;
+                    padding: 20px;
+                    border-radius: 10px;
+                    margin: 20px 0;
+                    background: white;
+                  }
+                  .qr-code img {
+                    max-width: 300px;
+                    max-height: 300px;
+                    display: block;
+                    margin: 0 auto;
+                  }
+                  .message {
+                    font-size: 18px;
+                    color: #666;
+                    margin-top: 20px;
+                    max-width: 400px;
+                    line-height: 1.4;
+                  }
+                  .instruction {
+                    font-size: 14px;
+                    color: #888;
+                    margin-top: 10px;
+                    font-style: italic;
+                  }
+                }
+                @media screen {
+                  body { 
+                    display: flex; 
+                    justify-content: center; 
+                    align-items: center; 
+                    min-height: 100vh; 
+                    margin: 0; 
+                    background: #f5f5f5;
+                    font-family: Arial, sans-serif;
+                  }
+                  .print-container {
+                    background: white;
+                    padding: 40px;
+                    border-radius: 15px;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                    text-align: center;
+                    max-width: 500px;
+                  }
+                  .salon-name {
+                    font-size: 28px;
+                    font-weight: bold;
+                    margin-bottom: 30px;
+                    color: #333;
+                  }
+                  .qr-code {
+                    border: 3px solid #333;
+                    padding: 25px;
+                    border-radius: 15px;
+                    margin: 30px 0;
+                    background: white;
+                    display: inline-block;
+                  }
+                  .qr-code img {
+                    max-width: 250px;
+                    max-height: 250px;
+                    display: block;
+                  }
+                  .message {
+                    font-size: 20px;
+                    color: #555;
+                    margin-top: 30px;
+                    line-height: 1.5;
+                  }
+                  .instruction {
+                    font-size: 16px;
+                    color: #777;
+                    margin-top: 15px;
+                    font-style: italic;
+                  }
+                }
               </style>
             </head>
             <body>
-              <img src="${salon.qrCodeUrl}" onload="window.print();window.close()" />
+              <div class="print-container">
+                <div class="salon-name">${salon.name}</div>
+                <div class="qr-code">
+                  <img src="${salon.qrCodeUrl}" alt="QR Code for Reviews" />
+                </div>
+                <div class="message">
+                  Thanks for visit!
+                </div>
+                <div class="message">
+                  Scan this QR code to leave a review for our salon!
+                </div>
+                <div class="instruction">
+                  Customers can scan this code with their phone camera to access our review page.
+                </div>
+              </div>
+              <script>
+                window.onload = function() {
+                  setTimeout(function() {
+                    window.print();
+                    setTimeout(function() {
+                      window.close();
+                    }, 500);
+                  }, 1000);
+                };
+              </script>
             </body>
           </html>
         `);
@@ -406,7 +752,8 @@ export default function SalonProfilePage() {
               QR Code for Reviews
             </CardTitle>
             <CardDescription>
-              Customers can scan this QR code to leave a review.
+              Download a professional QR code design with your salon branding
+              and welcoming messages for customers.
             </CardDescription>
           </CardHeader>
           <CardContent className="px-0 pb-0 flex flex-col items-center space-y-6">
@@ -424,7 +771,7 @@ export default function SalonProfilePage() {
                 <div className="flex gap-4 w-full">
                   <Button onClick={handleDownloadQR} className="flex-1">
                     <Download className="mr-2 h-4 w-4" />
-                    Download
+                    Download Professional QR
                   </Button>
                   <Button
                     onClick={handlePrintQR}
